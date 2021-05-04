@@ -26,7 +26,7 @@ class FileType(IntEnum):
 class LSFileStat(BaseModel):
     """
     file stat info from cmd: ls
-    example: drwxrwxrwx 4 shell shell 3488 2020-10-18 11:24 .studio
+    example android: drwxrwxrwx 4 shell shell 3488 2020-10-18 11:24 .studio
     """
     name: str = ''
     file_type: FileType = FileType.UNKNOWN
@@ -187,7 +187,7 @@ class LSFileStats(BaseModel):
                 '-l',
                 self.root
             ], **adb_kwargs)
-            output = util.get_cmd_output(cmd, *args, **kwargs).strip().split('\n')
+            output = util.get_cmd_output_lines(cmd, *args, **kwargs)
             for line in output:
                 if line.startswith('total'):
                     continue
@@ -224,5 +224,7 @@ class LSFileStats(BaseModel):
 
 if __name__ == '__main__':
     config.init()
-    file_stats = LSFileStats.new_from_ls_l(root='/data/local/tmp', is_recursive=True)
+    file_stats = LSFileStats.new_from_ls_l(
+        root='/data/local/tmp',
+        is_recursive=True)
     # print(file_stats.dump(group_by_type=True))
