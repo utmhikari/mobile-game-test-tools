@@ -94,7 +94,7 @@ class LSFileStats(BaseModel):
         for k in sorted(self.files.keys()):
             lines.append('%s (%d)' % (k, len(self.files[k])))
             lines.append(self.__dump_internal(self.files[k], **kwargs))
-            lines.append('\n')
+            lines.append('')
         return '\n'.join(lines)
 
     @staticmethod
@@ -171,29 +171,21 @@ class LSFileStats(BaseModel):
                 lines.append('')
         return '\n'.join(lines)
 
-    def ls_l(self,
-             is_recursive: bool = False,
-             adb_kwargs: Any = None,
-             *args,
-             **kwargs):
-        self.files = {}
-        if not isinstance(adb_kwargs, dict):
-            adb_kwargs = {}
+    def get_ls_l_output(self,
+                        is_recursive: bool = False,
+                        bridge_args: Dict[str, Any] = None,
+                        *args,
+                        **kwargs) -> List[str]:
+        if not isinstance(bridge_args, dict):
+            bridge_args = {}
         if not is_recursive:
-            self.files[self.root] = []
             cmd = config.CFG.get_adb_cmd(ext=[
                 'shell',
                 'ls',
                 '-l',
                 self.root
-            ], **adb_kwargs)
-            output = util.get_cmd_output_lines(cmd, *args, **kwargs)
-            for line in output:
-                if line.startswith('total'):
-                    continue
-                file_stat = LSFileStat.new_from_line(line)
-                if file_stat.is_valid():
-                    self.files[self.root].append(file_stat)
+            ], **bridge_args)
+            return util.get_cmd_output_lines(cmd, *args, **kwargs)
         else:
             cmd = config.CFG.get_adb_cmd(ext=[
                 'shell',
@@ -201,8 +193,24 @@ class LSFileStats(BaseModel):
                 '-l',
                 '-R',
                 self.root
-            ], **adb_kwargs)
-            output = util.get_cmd_output(cmd, *args, **kwargs).strip().split('\n')
+            ], **bridge_args)
+            return util.get_cmd_output_lines(cmd, *args, **kwargs)
+
+    def ls_l(self,
+             is_recursive: bool = False,
+             *args,
+             **kwargs):
+        self.files = {}
+        output = self.get_ls_l_output(is_recursive=is_recursive, *args, **kwargs)
+        if not is_recursive:
+            self.files[self.root] = []
+            for line in output:
+                if line.startswith('total'):
+                    continue
+                file_stat = LSFileStat.new_from_line(line)
+                if file_stat.is_valid():
+                    self.files[self.root].append(file_stat)
+        else:
             rt = ''
             for line in output:
                 if line.endswith(':'):
@@ -224,7 +232,7 @@ class LSFileStats(BaseModel):
 
 if __name__ == '__main__':
     config.init()
-    file_stats = LSFileStats.new_from_ls_l(
+    fst = LSFileStats.new_from_ls_l(
         root='/data/local/tmp',
         is_recursive=True)
     # print(file_stats.dump(group_by_type=True))

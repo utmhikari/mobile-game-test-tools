@@ -67,15 +67,22 @@ class UELogGrep(BaseModel):
     lines: List[UELogLine] = []
     group_lines: Dict[str, List[UELogLine]] = {}  # group by ue log category
 
-    def grep(self, keyword: str = '', adb_kwargs: Any = None, *args, **kwargs):
-        assert self.path
-        if not isinstance(adb_kwargs, dict):
-            adb_kwargs = {}
+    def grep_output_lines(self,
+                          keyword: str,
+                          bridge_args: Dict[str, Any] = None,
+                          *args,
+                          **kwargs) -> List[str]:
+        if not isinstance(bridge_args, dict):
+            bridge_args = {}
         ext = ['shell', 'cat', self.path]
         if keyword:
             ext.extend(['|', 'grep', keyword])
-        cmd = config.CFG.get_adb_cmd(ext=ext, **adb_kwargs)
-        output = util.get_cmd_output_lines(cmd, *args, **kwargs)
+        cmd = config.CFG.get_adb_cmd(ext=ext, **bridge_args)
+        return util.get_cmd_output_lines(cmd, *args, **kwargs)
+
+    def grep(self, keyword: str = '', *args, **kwargs):
+        assert self.path
+        output = self.grep_output_lines(keyword, *args, **kwargs)
         cnt = 0
         for line in output:
             try:
