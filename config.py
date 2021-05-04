@@ -12,6 +12,7 @@ class Config(BaseModel):
     config
     """
     adb: str = ''
+    serial: str = ''
 
     def get_adb_cmd(self, **kwargs) -> List[str]:
         cmd = [self.adb]
@@ -20,6 +21,8 @@ class Config(BaseModel):
         serial = kwargs.get('serial', '')
         if serial:
             cmd.extend(['-s', str(serial)])
+        elif self.serial:
+            cmd.extend(['-s', self.serial])
 
         # other commands to extend
         ext = kwargs.get('ext', [])

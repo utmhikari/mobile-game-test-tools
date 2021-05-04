@@ -1,3 +1,4 @@
 {
-  "adb": "adb"
+  "adb": "adb",
+  "serial": ""
 }
